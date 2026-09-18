@@ -1,5 +1,8 @@
 #  WhaleSignal MCP
 
+[![CI](https://github.com/kvandre12-commits/whalesignal-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/kvandre12-commits/whalesignal-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Turn raw Unusual Whales data into one decision-ready conviction score — spoken in plain English to any AI.**
 
 ![WhaleSignal dashboard preview](docs/dashboard-preview.png)

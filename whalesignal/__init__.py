@@ -6,4 +6,4 @@ market tide, congressional trades) into a handful of explainable, decision-ready
 signals exposed as Model Context Protocol (MCP) tools.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"

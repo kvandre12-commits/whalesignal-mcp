@@ -39,12 +39,13 @@ Ask Claude / Cursor / ChatGPT: *"What's the conviction on AMZN?"* and get this (
 
 - **It's an answer, not a dump.** Judges see instant, explainable signals — every score ships with a per-signal breakdown and a rationale. No black boxes.
 - **Data fusion is the moat.** Options flow alerts + net premium + call/put volume + dark pool accumulation + dealer gamma regime + congressional trades, blended with tunable weights.
-- **Graceful degradation.** Missing/permission-gated endpoints are dropped and weights renormalise — the score never silently lies.
+- **Fails honestly.** A bad/expired token (401) surfaces as an *error* — never a fake neutral score. Permission-gated (403) or transient endpoint failures drop just that one sub-signal and weights renormalise. The score never silently lies.
+- **Correct aggregation.** Cumulative intraday series (net premium, Market Tide) use the *latest* snapshot, not a sum of snapshots.
 - **Honest math.** Where directionality is ambiguous (dark pool without NBBO, gamma magnitude), we use conservative sign-only contributions instead of fake precision.
 - **Uses real endpoints only.** Built straight off the official `skill.md` whitelist — zero hallucinated routes, correct `Authorization` + `UW-CLIENT-API-ID: 100001` headers, all GET.
 - **Proven against real payloads.** The extractors read the *actual* UW field names (`total_ask_side_prem`, `call_gamma_oi`, `amounts` ranges …); tests replay the official example responses through the real `UWClient` (via `httpx.MockTransport`) — the same code path live data uses.
-- **Bounded inputs.** A `MAX_TICKERS` cap keeps any single request from fanning out into an unbounded burst of upstream calls.
-- **Tested logic.** 29 tests, all runnable with **no API key and no network**.
+- **Bounded & efficient.** A `MAX_TICKERS` cap plus a shared (fetch-once) congressional feed and a concurrency semaphore keep a batch from bursting the rate limit.
+- **Tested logic.** 34 tests, all runnable with **no API key and no network**.
 
 ## The signals
 
@@ -79,10 +80,10 @@ python -m whalesignal.cli NVDA AAPL TSLA AMZN MSFT --demo
 ```
 WhaleSignal ranking (5 tickers, best first):
  1. AMZN    83.1  Strong Bullish
- 2. AMD     81.5  Strong Bullish
- 3. AAPL    77.0  Strong Bullish
- 4. MSFT    53.4  Neutral / Mixed
- 5. NVDA    24.3  Strong Bearish
+ 2. AAPL    77.0  Strong Bullish
+ 3. MSFT    53.4  Neutral / Mixed
+ 4. NVDA    24.3  Strong Bearish
+ 5. TSLA    23.2  Strong Bearish
 ```
 
 ### One-call written market briefing
@@ -95,7 +96,7 @@ python -m whalesignal.cli NVDA AMD AMZN --brief --demo
 ```
 WhaleSignal Market Briefing - 2026-09-18  [DEMO DATA - synthetic, not live]
 ========================================================
-Market pulse: RISK-ON / BULLISH. Net call premium $5.31M, net put premium -$4.25M.
+Market pulse: RISK-ON / BULLISH. Net call premium $4.62M, net put premium -$4.60M.
 Whales leaning bullish: AMZN (83), AMD (82), AAPL (77).
 Whales leaning bearish: NVDA (24), TSLA (23), META (20).
 Top conviction: AMZN - Strong Bullish (83.1/100). net_premium: bullish (+1.00); options_flow_alerts: bullish (+0.68).
@@ -194,12 +195,12 @@ scripts/
 
 ```bash
 python tests/test_signals.py         # standalone, no deps, no key, no network
-pytest -q                            # or, with pytest installed (29 tests)
+pytest -q                            # or, with pytest installed (34 tests)
 ruff check whalesignal tests         # lint (config in pyproject.toml)
 ./scripts/demo.sh                    # full guided demo tour on synthetic data
 ```
 
-29 tests, no API key and no network required:
+34 tests, no API key and no network required:
 
 - **Pure scoring math** on hand-built cases.
 - **Full demo pipeline** (fetch -> fuse) via `DemoClient`.

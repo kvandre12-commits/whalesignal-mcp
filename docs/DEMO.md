@@ -176,7 +176,7 @@ WhaleSignal ranking (8 tickers, best first):
 
 WhaleSignal Market Briefing - 2026-09-18  [DEMO DATA - synthetic, not live]
 ========================================================
-Market pulse: RISK-ON / BULLISH. Net call premium $5.31M, net put premium -$4.25M.
+Market pulse: RISK-ON / BULLISH. Net call premium $4.62M, net put premium -$4.60M.
 Whales leaning bullish: AMZN (83), AMD (82), AAPL (77).
 Whales leaning bearish: NVDA (24), TSLA (23), META (20).
 Top conviction: AMZN - Strong Bullish (83.1/100). net_premium: bullish (+1.00); options_flow_alerts: bullish (+0.68).

@@ -15,7 +15,25 @@ from .config import BASE_URL, CLIENT_API_ID, ENDPOINTS, settings
 
 
 class UWError(RuntimeError):
-    """Raised when the Unusual Whales API returns an unrecoverable error."""
+    """Raised when the Unusual Whales API returns an unrecoverable error.
+
+    ``status`` carries the HTTP status when known. Callers distinguish:
+      * 401 -> authentication failure (fatal; never degrade to a neutral signal)
+      * 403 -> route not permitted for this token (a single signal may be dropped)
+      * other/None -> transient or unexpected failure (signal may be dropped)
+    """
+
+    def __init__(self, message: str, *, status: int | None = None,
+                 reason: str | None = None, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.status = status
+        self.reason = reason
+        self.retryable = retryable
+
+    @property
+    def is_auth(self) -> bool:
+        """True for a 401 - a hard authentication failure that must surface."""
+        return self.status == 401
 
 
 class UWClient:
@@ -25,11 +43,15 @@ class UWClient:
         *,
         timeout: float | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
+        concurrency: int | None = None,
     ) -> None:
         self._api_key = api_key or settings.api_key
         self._timeout = timeout or settings.request_timeout
         self._transport = transport  # inject httpx.MockTransport in tests
         self._client: httpx.AsyncClient | None = None
+        # Bounds simultaneous upstream requests regardless of how many tickers
+        # are being analysed in parallel (protects your rate limit).
+        self._sem = asyncio.Semaphore(concurrency or settings.max_concurrency)
 
     # --- lifecycle -------------------------------------------------------
     async def __aenter__(self) -> UWClient:
@@ -63,23 +85,28 @@ class UWClient:
                 return await bound.get(path, params)
 
         last_exc: Exception | None = None
-        for attempt in range(settings.max_retries + 1):
-            try:
-                resp = await self._client.get(path, params=_clean_params(params))
-                if resp.status_code == 429:  # rate limited — back off and retry
-                    await asyncio.sleep(1.5 * (attempt + 1))
-                    continue
-                if resp.status_code in (401, 403):
-                    reason = _safe_reason(resp)
-                    raise UWError(f"Auth failed ({resp.status_code}): {reason}")
-                resp.raise_for_status()
-                return resp.json()
-            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
-                last_exc = exc
-                if attempt < settings.max_retries:
-                    await asyncio.sleep(0.6 * (attempt + 1))
-                    continue
-        raise UWError(f"Request to {path} failed: {last_exc}")
+        async with self._sem:  # cap concurrent upstream requests
+            for attempt in range(settings.max_retries + 1):
+                try:
+                    resp = await self._client.get(path, params=_clean_params(params))
+                    if resp.status_code == 429:  # rate limited — back off and retry
+                        await asyncio.sleep(1.5 * (attempt + 1))
+                        continue
+                    if resp.status_code in (401, 403):
+                        reason = _safe_reason(resp)
+                        raise UWError(
+                            f"Auth failed ({resp.status_code}): {reason}",
+                            status=resp.status_code, reason=reason, retryable=False,
+                        )
+                    resp.raise_for_status()
+                    return resp.json()
+                except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+                    last_exc = exc
+                    if attempt < settings.max_retries:
+                        await asyncio.sleep(0.6 * (attempt + 1))
+                        continue
+        status = getattr(getattr(last_exc, "response", None), "status_code", None)
+        raise UWError(f"Request to {path} failed: {last_exc}", status=status, retryable=True)
 
     async def data(self, path: str, params: dict[str, Any] | None = None) -> list[dict]:
         """GET and unwrap the ``data`` list (the common UW response shape)."""

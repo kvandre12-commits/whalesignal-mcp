@@ -1,6 +1,6 @@
 [project]
 name = "whalesignal-mcp"
-version = "0.1.0"
+version = "0.1.2"
 description = "Composite market-intelligence MCP server built on the Unusual Whales API."
 readme = "README.md"
 license = {text = "MIT"}

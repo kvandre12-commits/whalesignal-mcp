@@ -28,9 +28,12 @@ whole thing in ten seconds.
 - **Live-compatibility fixtures.** Tests replay the official API example payloads (real
   field names + envelopes, e.g. `total_ask_side_prem`, `call_gamma_oi`, `amounts` ranges)
   through the real `UWClient` via `httpx.MockTransport` - the same code path live data uses.
-- **Bounded inputs.** A `MAX_TICKERS` cap prevents an unbounded burst of upstream calls.
+- **Bounded & efficient.** `MAX_TICKERS` cap + fetch-once shared congress feed + a
+  concurrency semaphore keep a batch from bursting the rate limit.
+- **Fails honestly.** 401 auth errors surface (never a fake neutral); 403/transient
+  failures drop only that sub-signal. Cumulative series use the latest snapshot, not a sum.
 - **Try it in 10 seconds, no key.** Deterministic demo mode doubles as CI.
-- **Tested prototype.** 29 tests, ruff-clean, SOLID tiny modules, works on mcp 1.x + 2.x.
+- **Tested prototype.** 34 tests, ruff-clean, SOLID tiny modules, works on mcp 1.x + 2.x.
 
 ## What's included
 

@@ -69,13 +69,16 @@ class DemoClient:
         rng = _seed(ticker + "net")
         bias = _bias(ticker)
         out = []
-        for _ in range(rng.randint(20, 40)):
+        cum_call = cum_put = 0.0  # cumulative running totals, like the real feed
+        for i in range(rng.randint(20, 40)):
+            cum_call += rng.gauss(bias * 40_000, 30_000)
+            cum_put += rng.gauss(-bias * 25_000, 25_000)
             out.append({
-                "net_call_premium": f"{rng.gauss(bias * 400_000, 300_000):.2f}",
-                "net_put_premium": f"{rng.gauss(-bias * 250_000, 250_000):.2f}",
+                "net_call_premium": f"{cum_call:.2f}",
+                "net_put_premium": f"{cum_put:.2f}",
                 "call_volume": rng.randint(500, 3_000),
                 "put_volume": rng.randint(300, 2_000),
-                "tape_time": "2025-03-21T19:58:00.000000Z",
+                "tape_time": f"2026-01-02T{14 + i // 60:02d}:{i % 60:02d}:00.000000Z",
             })
         return out
 
@@ -128,12 +131,15 @@ class DemoClient:
     async def market_tide(self, **_: Any) -> list[dict]:
         rng = _seed("MARKET")
         out = []
+        cum_call = cum_put = 0.0  # cumulative intraday running totals, like the real feed
         for i in range(30):
+            cum_call += rng.gauss(180_000, 120_000)
+            cum_put += rng.gauss(-140_000, 110_000)
             out.append({
                 "date": "2026-01-02",
                 "timestamp": f"2026-01-02T{9 + i // 6:02d}:{(i % 6) * 10:02d}:00-05:00",
-                "net_call_premium": f"{rng.gauss(220_000, 200_000):.4f}",
-                "net_put_premium": f"{rng.gauss(-120_000, 180_000):.4f}",
+                "net_call_premium": f"{cum_call:.4f}",
+                "net_put_premium": f"{cum_put:.4f}",
                 "net_volume": rng.randint(20_000, 90_000),
             })
         return out

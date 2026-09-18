@@ -53,6 +53,29 @@ def parse_amount(row: dict, *keys: str) -> float:
     return 0.0
 
 
+def _latest(rows: Iterable[dict], *time_keys: str) -> dict:
+    """Return the most recent row from a cumulative time series.
+
+    UW net-premium and Market Tide feeds are cumulative intraday snapshots (each row is
+    the running total at that timestamp), so the correct aggregate is the LATEST row -
+    summing them would multiply the day's totals. Falls back to the last element when no
+    recognised time field is present.
+    """
+    rows = list(rows)
+    if not rows:
+        return {}
+    keys = time_keys or ("tape_time", "timestamp", "time", "date")
+
+    def when(r: dict) -> str:
+        for k in keys:
+            if r.get(k) is not None:
+                return str(r[k])
+        return ""
+
+    timed = [r for r in rows if when(r)]
+    return max(timed, key=when) if timed else rows[-1]
+
+
 def _ratio_score(bull: float, bear: float) -> float:
     """Map two competing magnitudes to a [-1, 1] score."""
     total = bull + bear
@@ -99,14 +122,20 @@ def flow_alert_score(alerts: Iterable[dict]) -> tuple[float, dict[str, Any]]:
 
 def net_premium_score(ticks: Iterable[dict]) -> tuple[float, dict[str, Any]]:
     """Score from cumulative net call vs net put premium over the session."""
-    net_call = net_put = 0.0
-    for t in ticks:
-        net_call += _num(t, "net_call_premium", "call_premium")
-        net_put += _num(t, "net_put_premium", "put_premium")
+    # Cumulative series: take the latest snapshot, not the sum of all snapshots.
+    ticks = list(ticks)
+    latest = _latest(ticks, "tape_time", "timestamp", "date")
+    net_call = _num(latest, "net_call_premium", "call_premium")
+    net_put = _num(latest, "net_put_premium", "put_premium")
     # Net put premium being *positive* means put buying (bearish), so it competes.
     score = _ratio_score(max(net_call, 0.0) + max(-net_put, 0.0),
                          max(net_put, 0.0) + max(-net_call, 0.0))
-    return score, {"net_call_premium": round(net_call), "net_put_premium": round(net_put)}
+    return score, {
+        "net_call_premium": round(net_call),
+        "net_put_premium": round(net_put),
+        "ticks": len(ticks),
+        "as_of": latest.get("tape_time") or latest.get("timestamp") or latest.get("date"),
+    }
 
 
 def options_volume_score(rows: Iterable[dict]) -> tuple[float, dict[str, Any]]:

@@ -11,10 +11,10 @@ import asyncio
 from datetime import date
 from typing import Any
 
-from .analysis import analyze_ticker
+from .analysis import _safe, analyze_ticker
 from .client import make_client
 from .config import bound_tickers, settings
-from .signals import _num, _ratio_score, parse_amount  # reuse the same robust extractors
+from .signals import _latest, _num, _ratio_score, parse_amount  # reuse the same extractors
 
 DEFAULT_WATCHLIST = [
     "NVDA", "AAPL", "TSLA", "AMZN", "MSFT", "META", "AMD", "GOOG", "SPY", "PLTR",
@@ -33,8 +33,10 @@ def _money(x: float) -> str:
 
 # --- pure summarizers ----------------------------------------------------
 def summarize_market_tide(ticks: list[dict]) -> dict[str, Any]:
-    net_call = sum(_num(t, "net_call_premium", "call_premium") for t in ticks)
-    net_put = sum(_num(t, "net_put_premium", "put_premium") for t in ticks)
+    # Market Tide is a cumulative intraday series: use the latest snapshot, not the sum.
+    latest = _latest(ticks, "timestamp", "date")
+    net_call = _num(latest, "net_call_premium", "call_premium")
+    net_put = _num(latest, "net_put_premium", "put_premium")
     score = _ratio_score(max(net_call, 0.0) + max(-net_put, 0.0),
                          max(net_put, 0.0) + max(-net_call, 0.0))
     if score > 0.15:
@@ -141,12 +143,18 @@ async def build_briefing(
 ) -> dict[str, Any]:
     watchlist = bound_tickers(tickers or DEFAULT_WATCHLIST)  # normalise + cap fan-out
     async with make_client() as client:
-        tide, cong, *analyses = await asyncio.gather(
-            client.market_tide(),
-            client.congress_recent(),
-            *(analyze_ticker(t, client=client) for t in watchlist),
+        # Fetch ticker-agnostic feeds once and share congress across every ticker
+        # (avoids N redundant congress calls). _safe re-raises auth (401) errors.
+        (tide, _ok_tide), congress_shared = await asyncio.gather(
+            _safe(client.market_tide()),
+            _safe(client.congress_recent()),
+        )
+        analyses = await asyncio.gather(
+            *(analyze_ticker(t, client=client, congress=congress_shared)
+              for t in watchlist)
         )
 
+    cong = congress_shared[0]
     ranked = sorted(analyses, key=lambda a: a["conviction_score"], reverse=True)
     market = summarize_market_tide(tide)
     congress = summarize_congress(cong)

@@ -87,6 +87,7 @@ def bound_tickers(tickers: list[str]) -> list[str]:
 class Settings:
     request_timeout: float = 20.0
     max_retries: int = 2
+    max_concurrency: int = 8  # cap simultaneous upstream HTTP requests
     weights: ConvictionWeights = field(default_factory=ConvictionWeights)
 
     # Read live from the environment so tests/CLI can toggle without re-importing.

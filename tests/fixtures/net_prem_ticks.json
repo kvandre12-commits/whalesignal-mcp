@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "call_volume": 1145,
+      "call_volume_ask_side": 822,
+      "call_volume_bid_side": 182,
+      "date": "2025-03-21",
+      "net_call_premium": "2234.00",
+      "net_call_volume": 640,
+      "net_delta": "26294.85817964231814400",
+      "net_put_premium": "-11106.00",
+      "net_put_volume": -137,
+      "put_volume": 241,
+      "put_volume_ask_side": 49,
+      "put_volume_bid_side": 186,
+      "tape_time": "2025-03-21T19:58:00.000000Z"
+    },
+    {
+      "call_volume": 1255,
+      "call_volume_ask_side": 912,
+      "call_volume_bid_side": 192,
+      "date": "2025-03-21",
+      "net_call_premium": "3234.00",
+      "net_call_volume": 720,
+      "net_delta": "28294.85817964231814400",
+      "net_put_premium": "-9106.00",
+      "net_put_volume": -127,
+      "put_volume": 231,
+      "put_volume_ask_side": 59,
+      "put_volume_bid_side": 166,
+      "tape_time": "2025-03-21T19:59:00.000000Z"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ bearish, 0 = neutral. The composite ``conviction`` maps the weighted blend to 0-
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
@@ -34,6 +35,24 @@ def _str(row: dict, *keys: str, default: str = "") -> str:
     return default
 
 
+def parse_amount(row: dict, *keys: str) -> float:
+    """Coerce a money field to a float, tolerating UW range strings.
+
+    Congressional trades report ``amounts`` as ranges like ``"$15,001 - $50,000"``;
+    we take the lower bound as a conservative size estimate.
+    """
+    keys = keys or ("amount", "amounts")
+    direct = _num(row, *keys)
+    if direct:
+        return direct
+    for k in keys:
+        raw = str(row.get(k, ""))
+        found = re.findall(r"[\d][\d,]*", raw)
+        if found:
+            return float(found[0].replace(",", ""))
+    return 0.0
+
+
 def _ratio_score(bull: float, bear: float) -> float:
     """Map two competing magnitudes to a [-1, 1] score."""
     total = bull + bear
@@ -53,27 +72,27 @@ def flow_alert_score(alerts: Iterable[dict]) -> tuple[float, dict[str, Any]]:
     n = 0
     for a in alerts:
         n += 1
-        prem = _num(a, "total_premium", "premium", "total_ask_side_prem", default=0.0)
+        # UW flow alerts expose an ask/bid-side premium split (strings) - that is the
+        # real directionality, not a `side` field. Calls hitting the ask and puts sold
+        # on the bid are bullish; puts on the ask and calls sold on the bid are bearish.
+        ask_prem = _num(a, "total_ask_side_prem")
+        bid_prem = _num(a, "total_bid_side_prem")
         kind = _str(a, "type", "option_type", "put_call")
-        is_call = kind.startswith("c") or bool(a.get("is_call"))
         is_put = kind.startswith("p") or bool(a.get("is_put"))
-        side = _str(a, "side", "aggressor", "flow_side")
-        ask_leaning = (
-            "ask" in side
-            or bool(a.get("has_sweep"))
-            or _num(a, "ask_vol") > _num(a, "bid_vol")
-        )
-        weight = prem if prem > 0 else 1.0
-        if is_call:
-            if ask_leaning or side == "":
-                bull += weight
-            else:
-                bear += weight * 0.5
-        elif is_put:
-            if ask_leaning or side == "":
+        if ask_prem or bid_prem:
+            if is_put:
+                bear += ask_prem
+                bull += bid_prem
+            else:  # calls (or unknown) - ask pressure is bullish
+                bull += ask_prem
+                bear += bid_prem
+        else:
+            # No ask/bid split available: fall back to total premium by option type.
+            weight = _num(a, "total_premium", "premium") or 1.0
+            if is_put:
                 bear += weight
             else:
-                bull += weight * 0.5
+                bull += weight
     score = _ratio_score(bull, bear)
     return score, {"alerts": n, "bull_premium": round(bull), "bear_premium": round(bear)}
 
@@ -142,11 +161,15 @@ def gamma_score(strikes: Iterable[dict]) -> tuple[float, dict[str, Any]]:
     """
     net_gamma = 0.0
     for s in strikes:
-        net_gamma += _num(s, "gamma", "gamma_exposure", "net_gamma")
-    # Squash into [-1, 1] with a gentle sign-preserving transform.
+        # Real UW spot-exposure rows split gamma into call_gamma_oi / put_gamma_oi
+        # (strings). Net dealer gamma proxy = call gamma minus put gamma.
+        if "call_gamma_oi" in s or "put_gamma_oi" in s:
+            net_gamma += _num(s, "call_gamma_oi") - _num(s, "put_gamma_oi")
+        else:
+            net_gamma += _num(s, "gamma", "gamma_exposure", "net_gamma")
     # Coarse but honest: we only trust the sign of net gamma, not its magnitude.
     score = 0.5 if net_gamma > 0 else (-0.5 if net_gamma < 0 else 0.0)
-    regime = "positive" if net_gamma > 0 else "negative"
+    regime = "positive" if net_gamma > 0 else ("negative" if net_gamma < 0 else "flat")
     return score, {"net_gamma": round(net_gamma), "regime": regime}
 
 
@@ -159,8 +182,8 @@ def congress_score(trades: Iterable[dict], ticker: str) -> tuple[float, dict[str
         if _str(t, "ticker", "ticker_symbol").upper() != tkr:
             continue
         n += 1
-        txn = _str(t, "transaction_type", "type", "txn_type")
-        amt = _num(t, "amount", "amounts", default=1.0) or 1.0
+        txn = _str(t, "txn_type", "transaction_type", "type")
+        amt = parse_amount(t) or 1.0  # amounts is a range string, e.g. "$15,001 - $50,000"
         if "purchase" in txn or "buy" in txn:
             buy += amt
         elif "sale" in txn or "sell" in txn:

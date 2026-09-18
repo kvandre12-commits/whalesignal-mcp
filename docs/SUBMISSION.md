@@ -9,7 +9,7 @@ not a spreadsheet.
 ## Elevator pitch (≈100 words)
 
 Unusual Whales already ships a great MCP that returns raw data. WhaleSignal goes one
-step further: it fuses six proprietary datasets - options flow alerts, net premium,
+step further: it fuses six Unusual Whales datasets - options flow alerts, net premium,
 call/put volume, dark-pool accumulation, dealer gamma regime, and congressional trades -
 into one conviction score, complete with a per-signal breakdown and a plain-English
 rationale. Ask Claude, Cursor, or ChatGPT "what's the conviction on NVDA?" and get a
@@ -25,8 +25,12 @@ whole thing in ten seconds.
   signals use conservative sign-only contributions instead of fake precision.
 - **Real endpoints only.** Built off the official `skill.md` whitelist - correct
   `Authorization` + `UW-CLIENT-API-ID: 100001` headers, all GET, zero hallucinated routes.
+- **Live-compatibility fixtures.** Tests replay the official API example payloads (real
+  field names + envelopes, e.g. `total_ask_side_prem`, `call_gamma_oi`, `amounts` ranges)
+  through the real `UWClient` via `httpx.MockTransport` - the same code path live data uses.
+- **Bounded inputs.** A `MAX_TICKERS` cap prevents an unbounded burst of upstream calls.
 - **Try it in 10 seconds, no key.** Deterministic demo mode doubles as CI.
-- **Production-minded.** 20 tests, ruff-clean, SOLID tiny modules, works on mcp 1.x + 2.x.
+- **Tested prototype.** 29 tests, ruff-clean, SOLID tiny modules, works on mcp 1.x + 2.x.
 
 ## What's included
 

@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "canceled": false,
+      "executed_at": "2025-05-02T13:42:12Z",
+      "ext_hour_sold_codes": "extended_hours_trade",
+      "market_center": "L",
+      "nbbo_ask": "19",
+      "nbbo_ask_quantity": 6600,
+      "nbbo_bid": "18.99",
+      "nbbo_bid_quantity": 29100,
+      "premium": "121538.56",
+      "price": "18.9904",
+      "sale_cond_codes": null,
+      "size": 6400,
+      "ticker": "QID",
+      "tracking_id": 71984388012245,
+      "trade_code": null,
+      "trade_settlement": "regular_settlement",
+      "trf_executed_at": "2025-05-02T13:42:11Z",
+      "volume": 9946819
+    },
+    {
+      "canceled": false,
+      "executed_at": "2023-02-16T00:59:44Z",
+      "ext_hour_sold_codes": "extended_hours_trade",
+      "market_center": "L",
+      "nbbo_ask": "19",
+      "nbbo_ask_quantity": 6600,
+      "nbbo_bid": "18.99",
+      "nbbo_bid_quantity": 29100,
+      "premium": "353214",
+      "price": "18.99",
+      "sale_cond_codes": null,
+      "size": 18600,
+      "ticker": "QID",
+      "tracking_id": 71984384768588,
+      "trade_code": null,
+      "trade_settlement": "regular_settlement",
+      "trf_executed_at": null,
+      "volume": 9940419
+    }
+  ]
+}

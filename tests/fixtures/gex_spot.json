@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "call_gamma_vol": "5124108502049.17",
+      "put_vanna_oi": "12921519098.30",
+      "call_charm_bid": "5820636.43",
+      "call_vanna_oi": "65476967081.41",
+      "call_charm_vol": "70827151575067.12",
+      "put_vanna_vol": "12921519098.30",
+      "call_vanna_ask": "22692351.20",
+      "call_vanna_bid": "234235.52",
+      "call_vanna_vol": "65476967081.41",
+      "call_delta_bid": "30499234235.52",
+      "call_delta_oi": "227549667.4651",
+      "put_vanna_bid": "26934630.34",
+      "call_gamma_bid": "30499234235.52",
+      "call_delta_ask": "23452351.20",
+      "time": "2023-12-13T05:00:41.481000Z",
+      "put_gamma_ask": "9528523023.39",
+      "put_charm_ask": "96836366.22",
+      "put_delta_bid": "9342852354.34",
+      "call_gamma_ask": "23452351.20",
+      "price": "4650",
+      "put_delta_ask": "9528523023.39",
+      "call_gamma_oi": "5124108502049.17",
+      "put_gamma_vol": "320909908341.10",
+      "put_charm_bid": "6100352354.34",
+      "put_delta_oi": "-191893077.7193",
+      "put_charm_oi": "2282895170748.09",
+      "put_gamma_bid": "9342852354.34",
+      "put_charm_vol": "2282895170748.09",
+      "put_vanna_ask": "495803.39",
+      "call_delta_vol": "227549667.4651",
+      "put_gamma_oi": "320909908341.10",
+      "put_delta_vol": "-191893077.7193",
+      "call_charm_oi": "70827151575067.12",
+      "call_charm_ask": "2582359253.61"
+    }
+  ]
+}

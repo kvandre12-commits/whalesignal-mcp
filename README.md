@@ -5,29 +5,33 @@
 
 **Turn raw Unusual Whales data into one decision-ready conviction score — spoken in plain English to any AI.**
 
-![WhaleSignal dashboard preview](docs/dashboard-preview.png)
+![WhaleSignal conviction heatmap](docs/heatmap-demo.svg)
 
-*Conviction heatmap + live market briefing. (Design preview render; run `python -m whalesignal.web --demo` for the real thing.)* See the full terminal tour in [`docs/DEMO.md`](docs/DEMO.md).
+*Conviction heatmap rendered by [`scripts/render_heatmap.py`](scripts/render_heatmap.py) from the actual `/api/rank --demo` output (same code the web dashboard serves). Run `python -m whalesignal.web --demo` for the interactive version.* Full terminal tour: [`docs/DEMO.md`](docs/DEMO.md).
 
-Unusual Whales already ships a great hosted MCP that returns *raw* data. WhaleSignal goes one step further: it **fuses six proprietary datasets into a single explainable 0–100 conviction score** per ticker, so an LLM (or a human) gets an *answer*, not a spreadsheet.
+Unusual Whales already ships a great hosted MCP that returns *raw* data. WhaleSignal goes one step further: it **fuses six Unusual Whales datasets into a single explainable 0–100 conviction score** per ticker, so an LLM (or a human) gets an *answer*, not a spreadsheet.
 
-Ask Claude / Cursor / ChatGPT: *"What's the conviction on NVDA?"* and get:
+Ask Claude / Cursor / ChatGPT: *"What's the conviction on AMZN?"* and get this (actual `--demo` output):
 
 ```
-== NVDA  —  Strong Bullish  (BULLISH) ==
-   [######################--------] 74.2/100   coverage 100%
+== AMZN  —  Strong Bullish  (BULLISH) ==
+   [#########################-----] 83.1/100   coverage 100%
    sub-signals:
-     - options_flow_alerts   +0.81  w=0.30
-     - net_premium           +0.66  w=0.28
-     - options_volume        +0.40  w=0.14
-     - dark_pool             +0.22  w=0.12
-     - gamma_regime          +0.50  w=0.10
-     - congress              +0.00  w=0.06 (no data)
+     - options_flow_alerts  +0.68  w=0.30
+     - net_premium          +1.00  w=0.28
+     - options_volume       +0.84  w=0.14
+     - dark_pool            +0.09  w=0.12
+     - gamma_regime         +0.50  w=0.10
+     - congress             +0.00  w=0.06
    why:
-     * options_flow_alerts: bullish (+0.81)
-     * net_premium: bullish (+0.66)
+     * net_premium: bullish (+1.00)
+     * options_flow_alerts: bullish (+0.68)
+     * options_volume: bullish (+0.84)
      * gamma_regime: bullish (+0.50)
+     * dark_pool: bullish (+0.09)
 ```
+
+> Numbers above are deterministic synthetic **demo** data (seeded per ticker), reproducible with `python -m whalesignal.cli AMZN --demo`. Different tickers produce different scores; e.g. `NVDA` is `24.3 / Strong Bearish`.
 
 ---
 
@@ -38,7 +42,9 @@ Ask Claude / Cursor / ChatGPT: *"What's the conviction on NVDA?"* and get:
 - **Graceful degradation.** Missing/permission-gated endpoints are dropped and weights renormalise — the score never silently lies.
 - **Honest math.** Where directionality is ambiguous (dark pool without NBBO, gamma magnitude), we use conservative sign-only contributions instead of fake precision.
 - **Uses real endpoints only.** Built straight off the official `skill.md` whitelist — zero hallucinated routes, correct `Authorization` + `UW-CLIENT-API-ID: 100001` headers, all GET.
-- **Tested logic.** The scoring core is pure functions with a unit suite that runs with **no API key and no network**.
+- **Proven against real payloads.** The extractors read the *actual* UW field names (`total_ask_side_prem`, `call_gamma_oi`, `amounts` ranges …); tests replay the official example responses through the real `UWClient` (via `httpx.MockTransport`) — the same code path live data uses.
+- **Bounded inputs.** A `MAX_TICKERS` cap keeps any single request from fanning out into an unbounded burst of upstream calls.
+- **Tested logic.** 29 tests, all runnable with **no API key and no network**.
 
 ## The signals
 
@@ -62,7 +68,8 @@ same interface as the live client, so the whole fetch -> fuse -> score pipeline 
 offline. Great for demos and CI; output is clearly stamped `** DEMO DATA **`.
 
 ```bash
-cd ~/uw-challenge
+git clone https://github.com/kvandre12-commits/whalesignal-mcp.git
+cd whalesignal-mcp
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 
@@ -71,10 +78,11 @@ python -m whalesignal.cli NVDA AAPL TSLA AMZN MSFT --demo
 
 ```
 WhaleSignal ranking (5 tickers, best first):
- 1. AMZN    87.9  Strong Bullish
- 2. AMD     78.1  Strong Bullish
- ...
- 5. NVDA    17.5  Strong Bearish
+ 1. AMZN    83.1  Strong Bullish
+ 2. AMD     81.5  Strong Bullish
+ 3. AAPL    77.0  Strong Bullish
+ 4. MSFT    53.4  Neutral / Mixed
+ 5. NVDA    24.3  Strong Bearish
 ```
 
 ### One-call written market briefing
@@ -87,11 +95,11 @@ python -m whalesignal.cli NVDA AMD AMZN --brief --demo
 ```
 WhaleSignal Market Briefing - 2026-09-18  [DEMO DATA - synthetic, not live]
 ========================================================
-Market pulse: RISK-ON / BULLISH. Net options premium $3.62M into calls vs $983.87K into puts.
-Whales leaning bullish: AMZN (88), AMD (78), MSFT (78).
-Whales leaning bearish: PLTR (25), TSLA (19), NVDA (18).
-Top conviction: AMZN - Strong Bullish (87.9/100). options_flow_alerts: bullish (+1.00); net_premium: bullish (+1.00).
-Congress desk: 19 buys vs 10 sells recently. Notable: Purchase NVDA ($250.00K); ...
+Market pulse: RISK-ON / BULLISH. Net call premium $5.31M, net put premium -$4.25M.
+Whales leaning bullish: AMZN (83), AMD (82), AAPL (77).
+Whales leaning bearish: NVDA (24), TSLA (23), META (20).
+Top conviction: AMZN - Strong Bullish (83.1/100). net_premium: bullish (+1.00); options_flow_alerts: bullish (+0.68).
+Congress desk: 19 buys vs 10 sells recently. Notable: Buy NVDA ($100,001 - $250,000); ...
 ```
 
 ### Web dashboard (conviction heatmap)
@@ -175,19 +183,30 @@ tests/
   test_demo_pipeline.py  # full fetch->fuse pipeline via DemoClient
   test_briefing.py       # briefing summarizers + composer
   test_web.py            # web ticker parsing + asset presence
+  test_fixtures.py       # REAL API example payloads -> signals + UWClient (MockTransport)
+  fixtures/*.json        # official UW example responses (real field names/envelopes)
+scripts/
+  demo.sh                # guided terminal tour (synthetic data)
+  render_heatmap.py      # render the heatmap SVG from real /api/rank output
 ```
 
 ## Testing & linting
 
 ```bash
 python tests/test_signals.py         # standalone, no deps, no key, no network
-pytest -q                            # or, with pytest installed (20 tests)
+pytest -q                            # or, with pytest installed (29 tests)
 ruff check whalesignal tests         # lint (config in pyproject.toml)
 ./scripts/demo.sh                    # full guided demo tour on synthetic data
 ```
 
-20 tests: pure scoring math, full demo pipeline, briefing composer, and the web layer —
-all runnable with no API key and no network.
+29 tests, no API key and no network required:
+
+- **Pure scoring math** on hand-built cases.
+- **Full demo pipeline** (fetch -> fuse) via `DemoClient`.
+- **Live-compatibility fixtures** — the official UW example payloads (real field names
+  and envelopes) replayed through the pure signals *and* through the real `UWClient`
+  using `httpx.MockTransport`, verifying auth headers + `data` unwrap + correct field reads.
+- **Briefing composer** and **web layer**.
 
 ## Disclaimer
 

@@ -53,7 +53,8 @@ def test_compose_brief_contains_key_sections():
          "label": "Strong Bearish", "rationale": ["net_premium: bearish (-1.00)"]},
     ]
     congress = {"total": 5, "buys": 3, "sells": 2,
-                "notable": [{"ticker": "NVDA", "type": "Purchase", "amount": 250_000}]}
+                "notable": [{"ticker": "NVDA", "type": "Buy", "amount": 250_000,
+                             "amount_label": "$100,001 - $250,000"}]}
     text = b.compose_brief(market, ranked, congress, is_demo=True, day="2026-01-01")
     assert "Market Briefing" in text
     assert "DEMO DATA" in text

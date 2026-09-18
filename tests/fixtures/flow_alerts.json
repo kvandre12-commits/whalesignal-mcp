@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "alert_rule": "RepeatedHits",
+      "all_opening_trades": false,
+      "created_at": "2023-12-12T16:35:52.168490Z",
+      "expiry": "2023-12-22",
+      "expiry_count": 1,
+      "has_floor": false,
+      "has_multileg": false,
+      "has_singleleg": true,
+      "has_sweep": true,
+      "issue_type": "Common Stock",
+      "open_interest": 7913,
+      "option_chain": "MSFT231222C00375000",
+      "price": "4.05",
+      "strike": "375",
+      "ticker": "MSFT",
+      "total_ask_side_prem": "151875",
+      "total_bid_side_prem": "405",
+      "total_premium": "186705",
+      "total_size": 461,
+      "trade_count": 32,
+      "type": "call",
+      "underlying_price": "372.99",
+      "volume": 2442,
+      "volume_oi_ratio": "0.30860609124226"
+    }
+  ]
+}

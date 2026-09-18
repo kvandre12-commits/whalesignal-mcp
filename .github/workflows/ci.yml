@@ -30,7 +30,7 @@ jobs:
           pip install ruff pytest
 
       - name: Lint (ruff)
-        run: ruff check whalesignal tests
+        run: ruff check whalesignal tests scripts
 
       - name: Byte-compile all modules
         run: python -m compileall -q whalesignal
@@ -44,3 +44,4 @@ jobs:
           python tests/test_demo_pipeline.py
           python tests/test_briefing.py
           python tests/test_web.py
+          python tests/test_fixtures.py

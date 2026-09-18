@@ -12,7 +12,7 @@ from typing import Any
 
 from . import signals as sig
 from .client import UWClient, make_client
-from .config import ConvictionWeights, settings
+from .config import ConvictionWeights, bound_tickers, settings
 
 
 async def _safe(coro: Awaitable[list[dict]]) -> tuple[list[dict], bool]:
@@ -76,6 +76,7 @@ async def rank_tickers(
     top: int | None = None,
 ) -> list[dict[str, Any]]:
     """Analyze several tickers concurrently and rank by conviction score."""
+    tickers = bound_tickers(tickers)  # normalise + enforce MAX_TICKERS
     async with make_client() as client:
         analyses = await asyncio.gather(
             *(analyze_ticker(t, client=client) for t in tickers)

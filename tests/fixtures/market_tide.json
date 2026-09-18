@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "date": "2023-09-08",
+      "net_call_premium": "660338.0000",
+      "net_put_premium": "-547564.0000",
+      "net_volume": 23558,
+      "timestamp": "2023-09-08T09:30:00-04:00"
+    },
+    {
+      "date": "2023-09-08",
+      "net_call_premium": "4907138.0000",
+      "net_put_premium": "-1709539.0000",
+      "net_volume": 64312,
+      "timestamp": "2023-09-08T09:31:00-04:00"
+    },
+    {
+      "date": "2023-09-08",
+      "net_call_premium": "4839265.0000",
+      "net_put_premium": "-2731793.0000",
+      "net_volume": 80029,
+      "timestamp": "2023-09-08T09:32:00-04:00"
+    }
+  ]
+}

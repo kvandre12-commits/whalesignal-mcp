@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "avg_30_day_call_volume": "658450.333333333333",
+      "avg_30_day_put_volume": "481505.300000000000",
+      "avg_3_day_call_volume": "949763.000000000000",
+      "avg_3_day_put_volume": "756387.333333333333",
+      "avg_7_day_call_volume": "878336.000000000000",
+      "avg_7_day_put_volume": "580650.857142857143",
+      "bearish_premium": "138449839",
+      "bullish_premium": "152015294",
+      "call_open_interest": 4358631,
+      "call_premium": "208699280",
+      "call_volume": 1071546,
+      "call_volume_ask_side": 486985,
+      "call_volume_bid_side": 514793,
+      "date": "2023-09-08",
+      "net_call_premium": "122015294",
+      "net_put_premium": "108449839",
+      "put_open_interest": 3771656,
+      "put_premium": "125472872",
+      "put_volume": 666386,
+      "put_volume_ask_side": 298282,
+      "put_volume_bid_side": 318834
+    }
+  ]
+}

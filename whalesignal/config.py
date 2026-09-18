@@ -22,6 +22,10 @@ CLIENT_API_ID = "100001"  # required UW-CLIENT-API-ID header
 API_KEY_ENV = "UW_API_KEY"
 DEMO_ENV = "WHALESIGNAL_DEMO"  # set to 1/true to run on deterministic synthetic data
 
+# Hard cap on how many tickers a single request may fan out to. Each ticker triggers
+# up to ~6 upstream calls, so this bounds the burst (and protects your rate limit).
+MAX_TICKERS = 25
+
 # Every documented endpoint we touch. Keeping them named + centralised means a single
 # typo can never spread, and we can assert against the official whitelist in tests.
 ENDPOINTS = {
@@ -59,6 +63,24 @@ class ConvictionWeights:
 
 def _truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def bound_tickers(tickers: list[str]) -> list[str]:
+    """Normalise (upper, dedupe, drop blanks) and enforce the MAX_TICKERS cap.
+
+    Raises ValueError if the caller asks for more than MAX_TICKERS, so a single
+    request can never fan out into an unbounded burst of upstream API calls.
+    """
+    seen: list[str] = []
+    for t in tickers:
+        u = str(t).strip().upper()
+        if u and u not in seen:
+            seen.append(u)
+    if len(seen) > MAX_TICKERS:
+        raise ValueError(
+            f"Too many tickers ({len(seen)}); maximum is {MAX_TICKERS} per request."
+        )
+    return seen
 
 
 @dataclass(frozen=True)

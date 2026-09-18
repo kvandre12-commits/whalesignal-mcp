@@ -54,7 +54,7 @@ async def conviction_score(ticker: str) -> dict[str, Any]:
         return {"error": err}
     try:
         return await analyze_ticker(ticker)
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -68,7 +68,7 @@ async def rank_watchlist(tickers: list[str], top: int | None = None) -> dict[str
     try:
         ranked = await rank_tickers([t.upper() for t in tickers], top=top)
         return {"count": len(ranked), "ranking": ranked}
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -84,7 +84,7 @@ async def market_briefing(tickers: list[str] | None = None, top: int = 5) -> dic
         return {"error": err}
     try:
         return await build_briefing(tickers, top=top)
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -97,7 +97,7 @@ async def flow_alerts(ticker: str, min_premium: int = 50_000, limit: int = 25) -
         async with make_client() as c:
             data = await c.flow_alerts(ticker, min_premium=min_premium, limit=limit)
         return {"ticker": ticker.upper(), "count": len(data), "alerts": data}
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -110,7 +110,7 @@ async def dark_pool(ticker: str, limit: int = 25) -> dict[str, Any]:
         async with make_client() as c:
             data = await c.darkpool(ticker, limit=limit)
         return {"ticker": ticker.upper(), "count": len(data), "prints": data}
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -124,7 +124,7 @@ async def market_pulse() -> dict[str, Any]:
             data = await c.market_tide()
         latest = data[-1] if data else {}
         return {"points": len(data), "latest": latest}
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -143,7 +143,7 @@ async def congress_trades(ticker: str | None = None, limit: int = 50) -> dict[st
                 if str(d.get("ticker", d.get("ticker_symbol", ""))).upper() == tkr
             ]
         return {"count": len(data), "trades": data}
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         return {"error": str(exc)}
 
 

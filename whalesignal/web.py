@@ -65,14 +65,14 @@ class Handler(BaseHTTPRequestHandler):
         try:
             ranked = asyncio.run(rank_tickers(tickers))
             self._json({"demo": settings.demo_mode, "count": len(ranked), "ranking": ranked})
-        except UWError as exc:
+        except (UWError, ValueError) as exc:
             self._json({"error": str(exc)}, code=502)
 
     def _handle_brief(self, tickers: list[str]) -> None:
         try:
             result = asyncio.run(build_briefing(tickers))
             self._json(result)
-        except UWError as exc:
+        except (UWError, ValueError) as exc:
             self._json({"error": str(exc)}, code=502)
 
 

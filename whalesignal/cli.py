@@ -50,7 +50,7 @@ async def _main(tickers: list[str], rank: bool, top: int | None, brief: bool) ->
             result = await build_briefing(tickers or None, top=top or 5)
             print("\n" + result["text"])
             return 0
-        except UWError as exc:
+        except (UWError, ValueError) as exc:
             print(f"API error: {exc}")
             return 1
     try:
@@ -67,7 +67,7 @@ async def _main(tickers: list[str], rank: bool, top: int | None, brief: bool) ->
         else:
             _print_report(await analyze_ticker(tickers[0]))
         return 0
-    except UWError as exc:
+    except (UWError, ValueError) as exc:
         print(f"API error: {exc}")
         return 1
 

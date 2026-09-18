@@ -13,8 +13,8 @@ from typing import Any
 
 from .analysis import analyze_ticker
 from .client import make_client
-from .config import settings
-from .signals import _num, _ratio_score  # reuse the same robust extractors
+from .config import bound_tickers, settings
+from .signals import _num, _ratio_score, parse_amount  # reuse the same robust extractors
 
 DEFAULT_WATCHLIST = [
     "NVDA", "AAPL", "TSLA", "AMZN", "MSFT", "META", "AMD", "GOOG", "SPY", "PLTR",
@@ -55,8 +55,8 @@ def summarize_congress(trades: list[dict], notable: int = 3) -> dict[str, Any]:
     buys = sells = 0
     sized: list[tuple[float, dict]] = []
     for t in trades:
-        txn = str(t.get("transaction_type", t.get("type", ""))).lower()
-        amt = _num(t, "amount", "amounts", default=0.0)
+        txn = str(t.get("txn_type", t.get("transaction_type", t.get("type", "")))).lower()
+        amt = parse_amount(t)  # tolerates "$15,001 - $50,000" range strings
         if "purchase" in txn or "buy" in txn:
             buys += 1
         elif "sale" in txn or "sell" in txn:
@@ -66,8 +66,9 @@ def summarize_congress(trades: list[dict], notable: int = 3) -> dict[str, Any]:
     top = [
         {
             "ticker": str(t.get("ticker", t.get("ticker_symbol", "?"))).upper(),
-            "type": str(t.get("transaction_type", t.get("type", "?"))).title(),
+            "type": str(t.get("txn_type", t.get("transaction_type", t.get("type", "?")))).title(),
             "amount": amt,
+            "amount_label": str(t.get("amounts", _money(amt))),
         }
         for amt, t in sized[:notable]
     ]
@@ -90,9 +91,9 @@ def compose_brief(
 
     # Market pulse
     lines.append(
-        f"Market pulse: {market['label'].upper()}. Net options premium "
-        f"{_money(market['net_call_premium'])} into calls vs "
-        f"{_money(market['net_put_premium'])} into puts."
+        f"Market pulse: {market['label'].upper()}. "
+        f"Net call premium {_money(market['net_call_premium'])}, "
+        f"net put premium {_money(market['net_put_premium'])}."
     )
 
     bulls = [r for r in ranked if r.get("bias") == "bullish"]
@@ -120,7 +121,8 @@ def compose_brief(
     c = congress
     if c["total"]:
         notable = "; ".join(
-            f"{n['type']} {n['ticker']} ({_money(n['amount'])})" for n in c["notable"]
+            f"{n['type']} {n['ticker']} ({n.get('amount_label') or _money(n.get('amount', 0))})"
+            for n in c["notable"]
         )
         lines.append(
             f"Congress desk: {c['buys']} buys vs {c['sells']} sells recently. "
@@ -137,7 +139,7 @@ async def build_briefing(
     tickers: list[str] | None = None,
     top: int = 5,
 ) -> dict[str, Any]:
-    watchlist = [t.upper() for t in (tickers or DEFAULT_WATCHLIST)]
+    watchlist = bound_tickers(tickers or DEFAULT_WATCHLIST)  # normalise + cap fan-out
     async with make_client() as client:
         tide, cong, *analyses = await asyncio.gather(
             client.market_tide(),

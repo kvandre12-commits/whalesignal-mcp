@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "amounts": "$15,001 - $50,000",
+      "filed_at_date": "2023-02-13",
+      "is_active": true,
+      "issuer": "not-disclosed",
+      "member_type": "house",
+      "name": "Stephen Cohen",
+      "notes": "Subholding Of: Stephens Advantage Account Description: FT UNIT 10479 PFD mutual-fund 32500",
+      "politician_id": "18f9fc95-4661-444e-99f5-99d3778e0c31",
+      "reporter": "Stephen C.",
+      "ticker": "FHWVOX",
+      "transaction_date": "2023-02-06",
+      "txn_type": "Buy"
+    },
+    {
+      "amounts": "$1,000 - $15,000",
+      "filed_at_date": "2023-02-13",
+      "is_active": false,
+      "issuer": "joint",
+      "member_type": "house",
+      "name": "Deborah Ross",
+      "notes": "Subholding Of: Fidelity Brokerage Account stock 8000",
+      "politician_id": "5b1e3f4a-2d3c-4e5f-8a6b-7c8d9e0f1a2b",
+      "reporter": "Debby Ross",
+      "ticker": "MSFT",
+      "transaction_date": "2023-02-01",
+      "txn_type": "Sell"
+    }
+  ]
+}

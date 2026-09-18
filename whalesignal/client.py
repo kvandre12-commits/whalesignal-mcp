@@ -19,9 +19,16 @@ class UWError(RuntimeError):
 
 
 class UWClient:
-    def __init__(self, api_key: str | None = None, *, timeout: float | None = None) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        *,
+        timeout: float | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
         self._api_key = api_key or settings.api_key
         self._timeout = timeout or settings.request_timeout
+        self._transport = transport  # inject httpx.MockTransport in tests
         self._client: httpx.AsyncClient | None = None
 
     # --- lifecycle -------------------------------------------------------
@@ -33,6 +40,7 @@ class UWClient:
         self._client = httpx.AsyncClient(
             base_url=BASE_URL,
             timeout=self._timeout,
+            transport=self._transport,
             headers={
                 "Authorization": f"Bearer {self._api_key}",
                 "UW-CLIENT-API-ID": CLIENT_API_ID,

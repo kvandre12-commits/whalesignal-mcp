@@ -48,20 +48,33 @@ Weights live in `whalesignal/config.py` (`ConvictionWeights`) — tune to taste.
 
 ---
 
-## Quick start
+## Try it in 10 seconds (no API key)
+
+WhaleSignal ships a **demo mode**: a deterministic synthetic data source with the exact
+same interface as the live client, so the whole fetch -> fuse -> score pipeline runs
+offline. Great for demos and CI; output is clearly stamped `** DEMO DATA **`.
 
 ```bash
 cd ~/uw-challenge
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env
-# edit .env and set UW_API_KEY=<your token>
+python -m whalesignal.cli NVDA AAPL TSLA AMZN MSFT --demo
 ```
 
-### Try the CLI demo
+```
+WhaleSignal ranking (5 tickers, best first):
+ 1. AMZN    87.9  Strong Bullish
+ 2. AMD     78.1  Strong Bullish
+ ...
+ 5. NVDA    17.5  Strong Bearish
+```
+
+## Going live (with an API key)
 
 ```bash
+cp .env.example .env
+# edit .env and set UW_API_KEY=<your token>
 python -m whalesignal.cli NVDA
 python -m whalesignal.cli NVDA AAPL TSLA --rank --top 3
 ```
@@ -69,7 +82,8 @@ python -m whalesignal.cli NVDA AAPL TSLA --rank --top 3
 ### Run the MCP server
 
 ```bash
-python -m whalesignal.server        # stdio transport
+python -m whalesignal.server                    # live (needs UW_API_KEY)
+WHALESIGNAL_DEMO=1 python -m whalesignal.server  # demo data, no key needed
 ```
 
 ### Connect an MCP client (Claude Desktop / Cursor / VS Code)

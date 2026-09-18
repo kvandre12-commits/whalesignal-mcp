@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover - mcp 1.x fallback
     from mcp.server.fastmcp import FastMCP as _Server
 
 from .analysis import analyze_ticker, rank_tickers
-from .client import UWClient, UWError
+from .client import UWError, make_client
 from .config import settings
 
 mcp = _Server(
@@ -33,12 +33,12 @@ mcp = _Server(
 
 
 def _need_key() -> str | None:
-    if not settings.has_key:
-        return (
-            "No Unusual Whales API key configured. Set UW_API_KEY in the environment "
-            "or in ~/uw-challenge/.env, then restart the MCP server."
-        )
-    return None
+    if settings.has_key or settings.demo_mode:
+        return None
+    return (
+        "No Unusual Whales API key configured. Set UW_API_KEY in the environment or in "
+        "~/uw-challenge/.env, or run with WHALESIGNAL_DEMO=1 for synthetic demo data."
+    )
 
 
 @mcp.tool()
@@ -77,7 +77,7 @@ async def flow_alerts(ticker: str, min_premium: int = 50_000, limit: int = 25) -
     if (err := _need_key()):
         return {"error": err}
     try:
-        async with UWClient() as c:
+        async with make_client() as c:
             data = await c.flow_alerts(ticker, min_premium=min_premium, limit=limit)
         return {"ticker": ticker.upper(), "count": len(data), "alerts": data}
     except UWError as exc:
@@ -90,7 +90,7 @@ async def dark_pool(ticker: str, limit: int = 25) -> dict[str, Any]:
     if (err := _need_key()):
         return {"error": err}
     try:
-        async with UWClient() as c:
+        async with make_client() as c:
             data = await c.darkpool(ticker, limit=limit)
         return {"ticker": ticker.upper(), "count": len(data), "prints": data}
     except UWError as exc:
@@ -103,7 +103,7 @@ async def market_pulse() -> dict[str, Any]:
     if (err := _need_key()):
         return {"error": err}
     try:
-        async with UWClient() as c:
+        async with make_client() as c:
             data = await c.market_tide()
         latest = data[-1] if data else {}
         return {"points": len(data), "latest": latest}
@@ -117,7 +117,7 @@ async def congress_trades(ticker: str | None = None, limit: int = 50) -> dict[st
     if (err := _need_key()):
         return {"error": err}
     try:
-        async with UWClient() as c:
+        async with make_client() as c:
             data = await c.congress_recent(limit=limit)
         if ticker:
             tkr = ticker.upper()

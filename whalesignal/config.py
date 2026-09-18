@@ -20,6 +20,7 @@ except Exception:  # pragma: no cover - dotenv is optional at runtime
 BASE_URL = "https://api.unusualwhales.com"
 CLIENT_API_ID = "100001"  # required UW-CLIENT-API-ID header
 API_KEY_ENV = "UW_API_KEY"
+DEMO_ENV = "WHALESIGNAL_DEMO"  # set to 1/true to run on deterministic synthetic data
 
 # Every documented endpoint we touch. Keeping them named + centralised means a single
 # typo can never spread, and we can assert against the official whitelist in tests.
@@ -56,12 +57,24 @@ class ConvictionWeights:
     congress: float = 0.06
 
 
+def _truthy(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
-    api_key: str | None = field(default_factory=lambda: os.getenv(API_KEY_ENV))
     request_timeout: float = 20.0
     max_retries: int = 2
     weights: ConvictionWeights = field(default_factory=ConvictionWeights)
+
+    # Read live from the environment so tests/CLI can toggle without re-importing.
+    @property
+    def api_key(self) -> str | None:
+        return os.getenv(API_KEY_ENV)
+
+    @property
+    def demo_mode(self) -> bool:
+        return _truthy(os.getenv(DEMO_ENV))
 
     @property
     def has_key(self) -> bool:

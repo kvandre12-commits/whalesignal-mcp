@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Awaitable, Callable
 
-from .client import UWClient
+from .client import UWClient, make_client
 from .config import ConvictionWeights, settings
 from . import signals as sig
 
@@ -30,7 +30,7 @@ async def analyze_ticker(
     """Full conviction analysis for one ticker across all fused datasets."""
     weights = weights or settings.weights
     owns_client = client is None
-    client = client or UWClient()
+    client = client or make_client()
     if owns_client:
         await client.__aenter__()
     try:
@@ -71,7 +71,7 @@ async def rank_tickers(
     top: int | None = None,
 ) -> list[dict[str, Any]]:
     """Analyze several tickers concurrently and rank by conviction score."""
-    async with UWClient() as client:
+    async with make_client() as client:
         analyses = await asyncio.gather(
             *(analyze_ticker(t, client=client) for t in tickers)
         )

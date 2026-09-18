@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sys
 
 from .analysis import analyze_ticker, rank_tickers
 from .client import UWError
-from .config import settings
+from .config import DEMO_ENV, settings
 
 BAR_WIDTH = 30
 
@@ -38,8 +39,10 @@ def _print_report(a: dict) -> None:
 
 
 async def _main(tickers: list[str], rank: bool, top: int | None) -> int:
-    if not settings.has_key:
-        print("No UW_API_KEY set. Add it to ~/uw-challenge/.env or export it, then retry.")
+    if settings.demo_mode:
+        print("** DEMO DATA ** (synthetic, deterministic per ticker \u2014 not live market data)")
+    elif not settings.has_key:
+        print("No UW_API_KEY set. Add it to ~/uw-challenge/.env, export it, or pass --demo.")
         return 2
     try:
         if rank or len(tickers) > 1:
@@ -65,7 +68,10 @@ def main() -> None:
     p.add_argument("tickers", nargs="+", help="one or more ticker symbols")
     p.add_argument("--rank", action="store_true", help="force ranked comparison output")
     p.add_argument("--top", type=int, default=None, help="only show the top N")
+    p.add_argument("--demo", action="store_true", help="run on synthetic data, no API key needed")
     args = p.parse_args()
+    if args.demo:
+        os.environ[DEMO_ENV] = "1"  # settings reads this live
     sys.exit(asyncio.run(_main([t.upper() for t in args.tickers], args.rank, args.top)))
 
 

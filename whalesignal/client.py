@@ -115,6 +115,18 @@ class UWClient:
 
 
 # --- module helpers ------------------------------------------------------
+def make_client() -> "UWClient":
+    """Return the appropriate client: DemoClient in demo mode, else a real UWClient.
+
+    Kept here (not in analysis) so every entry point shares one selection rule.
+    """
+    if settings.demo_mode:
+        from .demo import DemoClient
+
+        return DemoClient()  # type: ignore[return-value]  # duck-typed twin
+    return UWClient()
+
+
 def _fmt(key: str, ticker: str) -> str:
     return ENDPOINTS[key].format(ticker=ticker.upper())
 

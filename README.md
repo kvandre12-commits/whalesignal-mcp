@@ -70,6 +70,23 @@ WhaleSignal ranking (5 tickers, best first):
  5. NVDA    17.5  Strong Bearish
 ```
 
+### One-call written market briefing
+
+```bash
+python -m whalesignal.cli --brief --demo            # default watchlist
+python -m whalesignal.cli NVDA AMD AMZN --brief --demo
+```
+
+```
+WhaleSignal Market Briefing - 2026-09-18  [DEMO DATA - synthetic, not live]
+========================================================
+Market pulse: RISK-ON / BULLISH. Net options premium $3.62M into calls vs $983.87K into puts.
+Whales leaning bullish: AMZN (88), AMD (78), MSFT (78).
+Whales leaning bearish: PLTR (25), TSLA (19), NVDA (18).
+Top conviction: AMZN - Strong Bullish (87.9/100). options_flow_alerts: bullish (+1.00); net_premium: bullish (+1.00).
+Congress desk: 19 buys vs 10 sells recently. Notable: Purchase NVDA ($250.00K); ...
+```
+
 ## Going live (with an API key)
 
 ```bash
@@ -112,6 +129,7 @@ Then ask: *"Use whalesignal to rank my watchlist: NVDA, AMD, TSLA, PLTR."*
 |---|---|
 | `conviction_score(ticker)` | Full fused 0–100 conviction with breakdown + rationale |
 | `rank_watchlist(tickers, top?)` | Rank several tickers, highest conviction first |
+| `market_briefing(tickers?, top?)` | One-call written daily brief: market pulse + ranked watchlist + notable congress trades |
 | `flow_alerts(ticker, min_premium?, limit?)` | Raw unusual options flow alerts |
 | `dark_pool(ticker, limit?)` | Recent dark pool prints |
 | `market_pulse()` | Overall market sentiment from Market Tide |
@@ -122,13 +140,17 @@ Then ask: *"Use whalesignal to rank my watchlist: NVDA, AMD, TSLA, PLTR."*
 ```
 whalesignal/
   config.py     # single source of truth: base URL, endpoints, weights
-  client.py     # async UW API client (auth, retries, data unwrap) — I/O only
+  client.py     # async UW API client (auth, retries, data unwrap) + client factory
+  demo.py       # DemoClient: deterministic synthetic data, same interface as client
   signals.py    # PURE scoring math — no network, fully unit-tested
-  analysis.py   # concurrent fetch + fuse (the only I/O + logic seam)
-  server.py     # thin MCP adapter (FastMCP tools)
+  analysis.py   # concurrent fetch + fuse (the I/O + logic seam)
+  briefing.py   # market_briefing: pure summarizers + composer, async orchestrator
+  server.py     # thin MCP adapter (works on mcp 1.x FastMCP and 2.x MCPServer)
   cli.py        # human-friendly terminal demo
 tests/
-  test_signals.py  # runs with no key, no network
+  test_signals.py        # pure scoring math (no key, no network)
+  test_demo_pipeline.py  # full fetch->fuse pipeline via DemoClient
+  test_briefing.py       # briefing summarizers + composer
 ```
 
 ## Testing

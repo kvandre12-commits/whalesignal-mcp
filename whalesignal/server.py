@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover - mcp 1.x fallback
     from mcp.server.fastmcp import FastMCP as _Server
 
 from .analysis import analyze_ticker, rank_tickers
+from .briefing import build_briefing
 from .client import UWError, make_client
 from .config import settings
 
@@ -67,6 +68,22 @@ async def rank_watchlist(tickers: list[str], top: int | None = None) -> dict[str
     try:
         ranked = await rank_tickers([t.upper() for t in tickers], top=top)
         return {"count": len(ranked), "ranking": ranked}
+    except UWError as exc:
+        return {"error": str(exc)}
+
+
+@mcp.tool()
+async def market_briefing(tickers: list[str] | None = None, top: int = 5) -> dict[str, Any]:
+    """One-call plain-English daily market brief.
+
+    Blends Market Tide sentiment, WhaleSignal conviction ranking over a watchlist,
+    and notable congressional trades into a written narrative plus structured data.
+    Pass your own `tickers` list or use the default liquid-name watchlist.
+    """
+    if (err := _need_key()):
+        return {"error": err}
+    try:
+        return await build_briefing(tickers, top=top)
     except UWError as exc:
         return {"error": str(exc)}
 

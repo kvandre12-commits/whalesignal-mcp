@@ -12,6 +12,7 @@ import os
 import sys
 
 from .analysis import analyze_ticker, rank_tickers
+from .briefing import build_briefing
 from .client import UWError
 from .config import DEMO_ENV, settings
 
@@ -38,12 +39,20 @@ def _print_report(a: dict) -> None:
         print(f"     * {r}")
 
 
-async def _main(tickers: list[str], rank: bool, top: int | None) -> int:
+async def _main(tickers: list[str], rank: bool, top: int | None, brief: bool) -> int:
     if settings.demo_mode:
         print("** DEMO DATA ** (synthetic, deterministic per ticker \u2014 not live market data)")
     elif not settings.has_key:
         print("No UW_API_KEY set. Add it to ~/uw-challenge/.env, export it, or pass --demo.")
         return 2
+    if brief:
+        try:
+            result = await build_briefing(tickers or None, top=top or 5)
+            print("\n" + result["text"])
+            return 0
+        except UWError as exc:
+            print(f"API error: {exc}")
+            return 1
     try:
         if rank or len(tickers) > 1:
             ranked = await rank_tickers(tickers, top=top)
@@ -65,14 +74,18 @@ async def _main(tickers: list[str], rank: bool, top: int | None) -> int:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="WhaleSignal conviction analysis")
-    p.add_argument("tickers", nargs="+", help="one or more ticker symbols")
+    p.add_argument("tickers", nargs="*", help="ticker symbols (optional with --brief)")
+    p.add_argument("--brief", action="store_true", help="print a written market briefing")
     p.add_argument("--rank", action="store_true", help="force ranked comparison output")
     p.add_argument("--top", type=int, default=None, help="only show the top N")
     p.add_argument("--demo", action="store_true", help="run on synthetic data, no API key needed")
     args = p.parse_args()
     if args.demo:
         os.environ[DEMO_ENV] = "1"  # settings reads this live
-    sys.exit(asyncio.run(_main([t.upper() for t in args.tickers], args.rank, args.top)))
+    if not args.tickers and not args.brief:
+        p.error("provide at least one ticker, or use --brief")
+    tickers = [t.upper() for t in args.tickers]
+    sys.exit(asyncio.run(_main(tickers, args.rank, args.top, args.brief)))
 
 
 if __name__ == "__main__":

@@ -138,7 +138,10 @@ async def congress_trades(ticker: str | None = None, limit: int = 50) -> dict[st
             data = await c.congress_recent(limit=limit)
         if ticker:
             tkr = ticker.upper()
-            data = [d for d in data if str(d.get("ticker", d.get("ticker_symbol", ""))).upper() == tkr]
+            data = [
+                d for d in data
+                if str(d.get("ticker", d.get("ticker_symbol", ""))).upper() == tkr
+            ]
         return {"count": len(data), "trades": data}
     except UWError as exc:
         return {"error": str(exc)}

@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from whalesignal import briefing as b  # noqa: E402
+from whalesignal import briefing as b
 
 
 def test_money_formatting():

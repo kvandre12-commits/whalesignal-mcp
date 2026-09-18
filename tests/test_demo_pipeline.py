@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ["WHALESIGNAL_DEMO"] = "1"  # settings reads this live
 
-from whalesignal.analysis import analyze_ticker, rank_tickers  # noqa: E402
+from whalesignal.analysis import analyze_ticker, rank_tickers
 
 
 def test_analyze_ticker_shape():

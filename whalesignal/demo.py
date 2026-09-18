@@ -35,7 +35,7 @@ class DemoClient:
     def __init__(self, *_: Any, **__: Any) -> None:
         pass
 
-    async def __aenter__(self) -> "DemoClient":
+    async def __aenter__(self) -> DemoClient:
         return self
 
     async def __aexit__(self, *exc: object) -> None:

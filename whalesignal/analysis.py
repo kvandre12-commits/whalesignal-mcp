@@ -7,11 +7,12 @@ should never sink the whole analysis.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable
+from typing import Any
 
+from . import signals as sig
 from .client import UWClient, make_client
 from .config import ConvictionWeights, settings
-from . import signals as sig
 
 
 async def _safe(coro: Awaitable[list[dict]]) -> tuple[list[dict], bool]:
@@ -46,12 +47,16 @@ async def analyze_ticker(
         if owns_client:
             await client.__aexit__(None, None, None)
 
-    (flow, ok_flow), (net, ok_net), (vol, ok_vol), (dp, ok_dp), (gex, ok_gex), (cong, ok_cong) = results
+    ((flow, ok_flow), (net, ok_net), (vol, ok_vol),
+     (dp, ok_dp), (gex, ok_gex), (cong, ok_cong)) = results
 
     builders: list[tuple[str, float, tuple[float, dict], bool]] = [
-        ("options_flow_alerts", weights.flow_alerts, sig.flow_alert_score(flow), ok_flow and bool(flow)),
-        ("net_premium", weights.net_premium, sig.net_premium_score(net), ok_net and bool(net)),
-        ("options_volume", weights.options_volume, sig.options_volume_score(vol), ok_vol and bool(vol)),
+        ("options_flow_alerts", weights.flow_alerts,
+         sig.flow_alert_score(flow), ok_flow and bool(flow)),
+        ("net_premium", weights.net_premium,
+         sig.net_premium_score(net), ok_net and bool(net)),
+        ("options_volume", weights.options_volume,
+         sig.options_volume_score(vol), ok_vol and bool(vol)),
         ("dark_pool", weights.dark_pool, sig.dark_pool_score(dp), ok_dp and bool(dp)),
         ("gamma_regime", weights.gamma, sig.gamma_score(gex), ok_gex and bool(gex)),
         ("congress", weights.congress, sig.congress_score(cong, ticker), ok_cong),

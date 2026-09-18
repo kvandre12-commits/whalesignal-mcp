@@ -25,7 +25,7 @@ class UWClient:
         self._client: httpx.AsyncClient | None = None
 
     # --- lifecycle -------------------------------------------------------
-    async def __aenter__(self) -> "UWClient":
+    async def __aenter__(self) -> UWClient:
         if not self._api_key:
             raise UWError(
                 "No API key. Set UW_API_KEY in your environment or ~/uw-challenge/.env"
@@ -115,7 +115,7 @@ class UWClient:
 
 
 # --- module helpers ------------------------------------------------------
-def make_client() -> "UWClient":
+def make_client() -> UWClient:
     """Return the appropriate client: DemoClient in demo mode, else a real UWClient.
 
     Kept here (not in analysis) so every entry point shares one selection rule.

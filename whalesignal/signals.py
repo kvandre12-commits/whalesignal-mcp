@@ -9,8 +9,9 @@ bearish, 0 = neutral. The composite ``conviction`` maps the weighted blend to 0-
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 from .config import ConvictionWeights
 
@@ -57,7 +58,11 @@ def flow_alert_score(alerts: Iterable[dict]) -> tuple[float, dict[str, Any]]:
         is_call = kind.startswith("c") or bool(a.get("is_call"))
         is_put = kind.startswith("p") or bool(a.get("is_put"))
         side = _str(a, "side", "aggressor", "flow_side")
-        ask_leaning = "ask" in side or bool(a.get("has_sweep")) or _num(a, "ask_vol") > _num(a, "bid_vol")
+        ask_leaning = (
+            "ask" in side
+            or bool(a.get("has_sweep"))
+            or _num(a, "ask_vol") > _num(a, "bid_vol")
+        )
         weight = prem if prem > 0 else 1.0
         if is_call:
             if ask_leaning or side == "":
@@ -121,7 +126,12 @@ def dark_pool_score(prints: Iterable[dict]) -> tuple[float, dict[str, Any]]:
             else:
                 sell += notional
     score = _ratio_score(buy, sell)
-    return score, {"prints": n, "notional": round(total_notional), "accumulation": round(buy), "distribution": round(sell)}
+    return score, {
+        "prints": n,
+        "notional": round(total_notional),
+        "accumulation": round(buy),
+        "distribution": round(sell),
+    }
 
 
 def gamma_score(strikes: Iterable[dict]) -> tuple[float, dict[str, Any]]:
@@ -136,7 +146,8 @@ def gamma_score(strikes: Iterable[dict]) -> tuple[float, dict[str, Any]]:
     # Squash into [-1, 1] with a gentle sign-preserving transform.
     # Coarse but honest: we only trust the sign of net gamma, not its magnitude.
     score = 0.5 if net_gamma > 0 else (-0.5 if net_gamma < 0 else 0.0)
-    return score, {"net_gamma": round(net_gamma), "regime": "positive" if net_gamma > 0 else "negative"}
+    regime = "positive" if net_gamma > 0 else "negative"
+    return score, {"net_gamma": round(net_gamma), "regime": regime}
 
 
 def congress_score(trades: Iterable[dict], ticker: str) -> tuple[float, dict[str, Any]]:

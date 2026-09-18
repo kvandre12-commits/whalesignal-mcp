@@ -2,6 +2,10 @@
 
 **Turn raw Unusual Whales data into one decision-ready conviction score — spoken in plain English to any AI.**
 
+![WhaleSignal dashboard preview](docs/dashboard-preview.png)
+
+*Conviction heatmap + live market briefing. (Design preview render; run `python -m whalesignal.web --demo` for the real thing.)* See the full terminal tour in [`docs/DEMO.md`](docs/DEMO.md).
+
 Unusual Whales already ships a great hosted MCP that returns *raw* data. WhaleSignal goes one step further: it **fuses six proprietary datasets into a single explainable 0–100 conviction score** per ticker, so an LLM (or a human) gets an *answer*, not a spreadsheet.
 
 Ask Claude / Cursor / ChatGPT: *"What's the conviction on NVDA?"* and get:
@@ -170,13 +174,17 @@ tests/
   test_web.py            # web ticker parsing + asset presence
 ```
 
-## Testing
+## Testing & linting
 
 ```bash
-python tests/test_signals.py     # standalone, no deps
-# or, with pytest installed:
-pytest -q
+python tests/test_signals.py         # standalone, no deps, no key, no network
+pytest -q                            # or, with pytest installed (20 tests)
+ruff check whalesignal tests         # lint (config in pyproject.toml)
+./scripts/demo.sh                    # full guided demo tour on synthetic data
 ```
+
+20 tests: pure scoring math, full demo pipeline, briefing composer, and the web layer —
+all runnable with no API key and no network.
 
 ## Disclaimer
 

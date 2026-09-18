@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from whalesignal import signals as sig  # noqa: E402
+from whalesignal import signals as sig
 
 
 def test_flow_alerts_bullish_when_calls_dominate():

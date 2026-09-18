@@ -20,7 +20,7 @@ BAR_WIDTH = 30
 
 
 def _bar(score_100: float) -> str:
-    filled = int(round(score_100 / 100 * BAR_WIDTH))
+    filled = round(score_100 / 100 * BAR_WIDTH)
     return "[" + "#" * filled + "-" * (BAR_WIDTH - filled) + f"] {score_100:.1f}/100"
 
 

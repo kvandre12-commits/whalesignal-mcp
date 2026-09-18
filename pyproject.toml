@@ -19,6 +19,17 @@ whalesignal-web = "whalesignal.web:main"
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests intentionally mutate sys.path / env before importing the package.
+"tests/*" = ["E402"]
+
 [tool.setuptools]
 packages = ["whalesignal"]
 

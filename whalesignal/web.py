@@ -50,7 +50,7 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, payload: dict, code: int = 200) -> None:
         self._send(code, json.dumps(payload).encode("utf-8"), "application/json")
 
-    def do_GET(self) -> None:  # noqa: N802 (stdlib naming)
+    def do_GET(self) -> None:
         route = urlparse(self.path)
         if route.path == "/":
             self._send(200, _HTML.encode("utf-8"), "text/html; charset=utf-8")

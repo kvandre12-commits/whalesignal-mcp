@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+docs.md
+llms.txt
+skill.md

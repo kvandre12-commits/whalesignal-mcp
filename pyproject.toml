@@ -13,6 +13,7 @@ dependencies = [
 [project.scripts]
 whalesignal = "whalesignal.cli:main"
 whalesignal-mcp = "whalesignal.server:main"
+whalesignal-web = "whalesignal.web:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -20,3 +21,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["whalesignal"]
+
+[tool.setuptools.package-data]
+whalesignal = ["dashboard.html"]

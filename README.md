@@ -87,6 +87,20 @@ Top conviction: AMZN - Strong Bullish (87.9/100). options_flow_alerts: bullish (
 Congress desk: 19 buys vs 10 sells recently. Notable: Purchase NVDA ($250.00K); ...
 ```
 
+### Web dashboard (conviction heatmap)
+
+A zero-dependency (stdlib-only) single-page dashboard: a bullish/bearish heatmap of
+your watchlist plus the live market briefing. Click any tile for its sub-signal
+breakdown and rationale.
+
+```bash
+python -m whalesignal.web --demo          # then open http://127.0.0.1:8000
+python -m whalesignal.web --port 8000     # live (needs UW_API_KEY)
+```
+
+Endpoints (reuse the same analysis code as the CLI + MCP server):
+`GET /`, `GET /api/rank?tickers=...`, `GET /api/briefing?tickers=...`.
+
 ## Going live (with an API key)
 
 ```bash
@@ -147,10 +161,13 @@ whalesignal/
   briefing.py   # market_briefing: pure summarizers + composer, async orchestrator
   server.py     # thin MCP adapter (works on mcp 1.x FastMCP and 2.x MCPServer)
   cli.py        # human-friendly terminal demo
+  web.py        # stdlib-only dashboard server (heatmap + JSON endpoints)
+  dashboard.html# single-page heatmap front-end (no build step, no CDN)
 tests/
   test_signals.py        # pure scoring math (no key, no network)
   test_demo_pipeline.py  # full fetch->fuse pipeline via DemoClient
   test_briefing.py       # briefing summarizers + composer
+  test_web.py            # web ticker parsing + asset presence
 ```
 
 ## Testing

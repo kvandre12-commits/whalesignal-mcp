@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WhaleSignal - Conviction Heatmap</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #121826; --panel2: #1a2233; --ink: #e7edf7;
+    --muted: #8a97ac; --line: #26304a; --accent: #4da3ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  h1 { font-size: 18px; margin: 0; letter-spacing: .5px; }
+  h1 .whale { color: var(--accent); }
+  .badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 999px;
+    background: #3a2a00; color: #ffcc66; border: 1px solid #5a4400;
+  }
+  .badge.live { background: #05281a; color: #57e39b; border-color: #0c5236; }
+  .spacer { flex: 1; }
+  input, button {
+    font-family: inherit; font-size: 13px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel2); color: var(--ink);
+    padding: 8px 10px;
+  }
+  input { min-width: 320px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  main { padding: 22px; display: grid; grid-template-columns: 1fr 380px; gap: 22px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .tile {
+    border-radius: 12px; padding: 14px; cursor: pointer; position: relative;
+    border: 1px solid rgba(255,255,255,.08); transition: transform .08s ease;
+    min-height: 96px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .tile:hover { transform: translateY(-2px); }
+  .tile .tkr { font-size: 17px; font-weight: 700; }
+  .tile .score { font-size: 26px; font-weight: 800; }
+  .tile .lbl { font-size: 11px; opacity: .9; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .panel h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  pre.brief { white-space: pre-wrap; font-size: 12.5px; line-height: 1.5; margin: 0; color: #cdd6e6; }
+  .detail .row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .detail .row span:last-child { font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; border-radius: 4px; background: var(--panel2); overflow: hidden; margin-top: 4px; }
+  .bar > i { display: block; height: 100%; }
+  .foot { color: var(--muted); font-size: 11px; padding: 4px 22px 22px; }
+  .muted { color: var(--muted); }
+  .pos { color: #57e39b; } .neg { color: #ff7a7a; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="whale">Whale</span>Signal <span class="muted">- Conviction Heatmap</span></h1>
+  <span id="mode" class="badge">loading...</span>
+  <div class="spacer"></div>
+  <input id="tickers" placeholder="NVDA AAPL TSLA ..." />
+  <button id="go">Analyze</button>
+  <button id="refresh" title="Re-run">Refresh</button>
+</header>
+<main>
+  <section>
+    <div id="grid" class="grid"></div>
+    <div id="detail" class="panel detail" style="margin-top:22px; display:none"></div>
+  </section>
+  <aside>
+    <div class="panel">
+      <h2>Market Briefing</h2>
+      <pre id="brief" class="brief">Loading...</pre>
+    </div>
+  </aside>
+</main>
+<div class="foot">Not financial advice - heuristics over market data. Green = bullish conviction, red = bearish.</div>
+
+<script>
+function scoreColor(s) {
+  // 0 -> red, 50 -> slate, 100 -> green
+  const hue = Math.round((s / 100) * 135);          // 0=red .. 135=green
+  const light = 26 + Math.abs(s - 50) / 50 * 12;    // stronger conviction = brighter
+  return `hsl(${hue} 55% ${light}%)`;
+}
+function fmtSub(v) { return (v >= 0 ? '+' : '') + v.toFixed(2); }
+
+async function loadRank(tickers) {
+  const qs = tickers ? ('?tickers=' + encodeURIComponent(tickers)) : '';
+  const res = await fetch('/api/rank' + qs);
+  const data = await res.json();
+  const badge = document.getElementById('mode');
+  badge.textContent = data.demo ? 'DEMO DATA' : 'LIVE';
+  badge.className = 'badge' + (data.demo ? '' : ' live');
+  renderGrid(data.ranking || []);
+}
+async function loadBrief(tickers) {
+  const qs = tickers ? ('?tickers=' + encodeURIComponent(tickers)) : '';
+  const res = await fetch('/api/briefing' + qs);
+  const data = await res.json();
+  document.getElementById('brief').textContent = data.text || (data.error || 'No data');
+}
+function renderGrid(rows) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  rows.forEach(r => {
+    const t = document.createElement('div');
+    t.className = 'tile';
+    t.style.background = scoreColor(r.conviction_score);
+    t.innerHTML = `<div class="tkr">${r.ticker}</div>
+      <div class="score">${r.conviction_score.toFixed(0)}</div>
+      <div class="lbl">${r.label}</div>`;
+    t.onclick = () => renderDetail(r);
+    grid.appendChild(t);
+  });
+}
+function renderDetail(r) {
+  const d = document.getElementById('detail');
+  d.style.display = 'block';
+  const subs = (r.subsignals || []).map(s => {
+    const cls = s.score >= 0 ? 'pos' : 'neg';
+    const pct = Math.round((s.score + 1) / 2 * 100);
+    return `<div class="row"><span>${s.name}${s.available ? '' : ' (no data)'}</span>
+      <span class="${cls}">${fmtSub(s.score)} <span class="muted">w=${s.weight}</span></span></div>
+      <div class="bar"><i style="width:${pct}%; background:${scoreColor((s.score+1)*50)}"></i></div>`;
+  }).join('');
+  const why = (r.rationale || []).map(x => `<div class="muted">- ${x}</div>`).join('');
+  d.innerHTML = `<h2>${r.ticker} - ${r.label} (${r.conviction_score.toFixed(1)}/100)</h2>
+    ${subs}<div style="margin-top:10px">${why}</div>`;
+}
+
+function currentTickers() { return document.getElementById('tickers').value.trim(); }
+function run() { const t = currentTickers(); loadRank(t); loadBrief(t); }
+document.getElementById('go').onclick = run;
+document.getElementById('refresh').onclick = run;
+document.getElementById('tickers').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+run();
+</script>
+</body>
+</html>
